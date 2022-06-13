@@ -3,7 +3,7 @@
 # SSH Key Generator for Web-based Repositories
 
 updateConfig() {
-  [ ! -f "~/.ssh/config" ] && echo -e "\e[38;5;12mFile \"~/.ssh/config\" created.\033[0m" && touch config && chmod 600 config
+  [ ! -f ~/.ssh/config ] && touch config && chmod 600 config && echo -e "\e[38;5;12mFile \"~/.ssh/config\" created.\033[0m"
 
   [ -n "$2" ] && echo -e "#$1 account \nHost ${1}-${2}\n\tHostName ${1}\n\tIdentitiesOnly yes\n\tIdentityFile ~/.ssh/$3\n\tPreferredAuthentications publickey" >> ~/.ssh/config || echo -e "#$1 account \nHost ${1}\n\tHostName ${1}\n\tIdentitiesOnly yes\n\tIdentityFile ~/.ssh/$3\n\tPreferredAuthentications publickey" >> ~/.ssh/config
 
@@ -11,12 +11,18 @@ updateConfig() {
 }
 
 generateSSHKey() {
-  [ ! -d "~/.ssh" ] && echo -e "\e[38;5;12mFolder \"~/.ssh\" created.\033[0m" && mkdir ~/.ssh
+  [ ! -d ~/.ssh ] && mkdir ~/.ssh && echo -e "\e[38;5;12mFolder \"~/.ssh\" created.\033[0m"
 
   cd ~/.ssh
 
-  echo -n -e "\e[38;5;9m[REQUIRED]\033[0m Specify the key file name: "
-  read KEY_FILE_NAME
+  while [ -z "${KEY_FILE_NAME}" -o -f ~/.ssh/id_${2}_$KEY_FILE_NAME -o -f ~/.ssh/id_${2}_${KEY_FILE_NAME}.pub ]
+  do
+    echo -n -e "\e[38;5;9m[REQUIRED]\033[0m Specify the key file name: "
+    read KEY_FILE_NAME
+
+    [ -z "${KEY_FILE_NAME}" ] && echo "The specified key file name is invalid."
+    [ -f ~/.ssh/id_${2}_$KEY_FILE_NAME -o -f ~/.ssh/id_${2}_${KEY_FILE_NAME}.pub ] && echo "The specified key file name already exists."
+  done
 
   echo -n -e "\e[38;5;11m[OPTIONAL]\033[0m Specify host alias name (only necessary if You own more than one account in the same web-based git repository): "
   read HOST_ALIAS_NAME
@@ -27,11 +33,11 @@ generateSSHKey() {
 
   cat "id_${2}_$KEY_FILE_NAME.pub"
 
-  updateConfig $1 $HOST_ALIAS_NAME "id_${2}_$KEY_FILE_NAME.pub"
+  updateConfig $1 "$HOST_ALIAS_NAME" "id_${2}_$KEY_FILE_NAME.pub"
 }
 
 chooseEncryption() {
-  echo -e "Which encryption do You prefer?"
+  echo "Which encryption do You prefer?"
 
   readonly ENCRYPTION_OPTIONS=("ED25519" "RSA" "Exit")
 
@@ -55,7 +61,7 @@ chooseEncryption() {
   done
 }
 
-echo -e "Which web-based repository are You using?"
+echo "Which web-based repository are You using?"
 
 readonly OPTIONS=("GitHub" "GitLab" "Exit")
 
